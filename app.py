@@ -183,3 +183,135 @@ def create_comparison_chart(results):
     )
    
     return fig
+
+def main():
+    st.title("🎭 Sentiment Analysis Dashboard")
+    st.markdown("Analyze text sentiment using multiple methods and compare their results")
+   
+    # Sidebar for settings
+    st.sidebar.header("Analysis Methods")
+   
+    use_simple = st.sidebar.checkbox("Simple Rule-Based", value=True, help="Uses positive/negative word lists")
+    use_pattern = st.sidebar.checkbox("Pattern-Based", value=True, help="Uses regex patterns and emoticons")
+    use_huggingface = st.sidebar.checkbox("Hugging Face (Demo)", value=False, help="Demo version - requires API key for production")
+    use_manual = st.sidebar.checkbox("Manual Assessment", value=False, help="Add your own sentiment rating")
+   
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**Note**: This version works without external dependencies that require database access.")
+   
+    # Main interface
+    col1, col2 = st.columns([2, 1])
+   
+    with col1:
+        st.header("📝 Text Analysis")
+       
+        # Text input
+        user_text = st.text_area(
+            "Enter text to analyze:",
+            placeholder="Type or paste your text here...\n\nTry examples like:\n• 'I love this product! It's amazing!'\n• 'This is terrible and I hate it.'\n• 'The weather is okay today.'",
+            height=150
+        )
+       
+        # Sample texts for testing
+        st.markdown("**Quick Test Examples (click to load):**")
+        col_a, col_b, col_c = st.columns(3)
+       
+        with col_a:
+            if st.button("😊 Positive Example"):
+                user_text = "I absolutely love this product! It's fantastic and works perfectly. Highly recommended!"
+                st.success("Positive example loaded!")
+        with col_b:
+            if st.button("😞 Negative Example"):
+                user_text = "This is terrible! I hate it so much. Worst purchase ever. Complete waste of money."
+                st.error("Negative example loaded!")
+        with col_c:
+            if st.button("😐 Neutral Example"):
+                user_text = "The product arrived on time. It has basic features and standard quality. Nothing special."
+                st.info("Neutral example loaded!")
+       
+        # Show current text length
+        if user_text.strip():
+            st.write(f"📝 Text length: {len(user_text)} characters")
+        else:
+            st.warning("👆 Please enter some text above or click an example button")
+       
+        # Manual assessment if enabled
+        manual_sentiment = None
+        if use_manual and user_text.strip():
+            st.subheader("Manual Assessment")
+            manual_sentiment = st.radio(
+                "What sentiment do you think this text expresses?",
+                ["Positive", "Negative", "Neutral"],
+                horizontal=True
+            )
+       
+        # Analysis button
+        analyze_clicked = st.button("🔍 Analyze Sentiment", type="primary", disabled=not user_text.strip())
+       
+        if analyze_clicked and user_text.strip():
+            # Show loading
+            with st.spinner("Analyzing sentiment..."):
+                results = {}
+               
+                # Run selected analyses
+                if use_simple:
+                    results['Simple Rule-Based'] = get_simple_sentiment(user_text)
+               
+                if use_pattern:
+                    results['Pattern-Based'] = get_pattern_sentiment(user_text)
+               
+                if use_huggingface:
+                    results['Hugging Face (Demo)'] = get_huggingface_sentiment(user_text)
+               
+                if use_manual and manual_sentiment:
+                    results['Manual Assessment'] = {
+                        'sentiment': manual_sentiment,
+                        'confidence': 1.0,
+                        'raw_score': 1.0 if manual_sentiment == 'Positive' else (-1.0 if manual_sentiment == 'Negative' else 0.0),
+                        'details': 'Human assessment'
+                    }
+           
+            # Store results
+            result_entry = {
+                'timestamp': datetime.now(),
+                'text': user_text[:100] + "..." if len(user_text) > 100 else user_text,
+                'results': results
+            }
+            st.session_state.results_history.append(result_entry)
+           
+            # Display results
+            st.header("📊 Results")
+           
+            # Create metrics columns
+            if results:
+                cols = st.columns(len(results))
+                for i, (method, result) in enumerate(results.items()):
+                    with cols[i]:
+                        sentiment = result['sentiment']
+                        confidence = result['confidence']
+                       
+                        # Choose emoji based on sentiment
+                        emoji_map = {
+                            'Positive': '😊',
+                            'Negative': '😞',
+                            'Neutral': '😐',
+                            'Error': '❌',
+                            'API Error': '⚠️'
+                        }
+                       
+                        emoji = emoji_map.get(sentiment, '❓')
+                       
+                        # Color coding
+                        color_map = {
+                            'Positive': 'normal',
+                            'Negative': 'inverse',
+                            'Neutral': 'off',
+                            'Error': 'off',
+                            'API Error': 'off'
+                        }
+                       
+                        st.metric(
+                            label=f"{emoji} {method}",
+                            value=sentiment,
+                            delta=f"{confidence:.1%} confidence"
+                        )
