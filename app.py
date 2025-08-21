@@ -315,3 +315,140 @@ def main():
                             value=sentiment,
                             delta=f"{confidence:.1%} confidence"
                         )
+# Comparison chart
+                if len(results) > 1:
+                    st.plotly_chart(create_comparison_chart(results), use_container_width=True)
+               
+                # Detailed results
+                with st.expander("🔍 Detailed Results"):
+                    for method, result in results.items():
+                        st.markdown(f"**{method}:**")
+                        col_detail1, col_detail2, col_detail3 = st.columns(3)
+                        with col_detail1:
+                            st.write(f"Sentiment: {result['sentiment']}")
+                        with col_detail2:
+                            st.write(f"Confidence: {result['confidence']:.3f}")
+                        with col_detail3:
+                            st.write(f"Raw Score: {result['raw_score']:.3f}")
+                       
+                        if 'details' in result:
+                            st.write(f"Details: {result['details']}")
+                        st.markdown("---")
+   
+    with col2:
+        st.header("📈 Analysis History")
+       
+        if st.session_state.results_history:
+            # Show recent analyses
+            st.write(f"**Recent Analyses ({len(st.session_state.results_history)} total)**")
+           
+            for i, entry in enumerate(reversed(st.session_state.results_history[-5:])):
+                with st.expander(f"#{len(st.session_state.results_history)-i} - {entry['timestamp'].strftime('%H:%M:%S')}"):
+                    st.write("**Text:**")
+                    st.write(f"_{entry['text']}_")
+                    st.write("**Results:**")
+                    for method, result in entry['results'].items():
+                        emoji = '😊' if result['sentiment'] == 'Positive' else '😞' if result['sentiment'] == 'Negative' else '😐'
+                        st.write(f"{emoji} **{method}**: {result['sentiment']} ({result['confidence']:.2f})")
+           
+            # Clear history button
+            if st.button("🗑️ Clear History", type="secondary"):
+                st.session_state.results_history = []
+                st.rerun()
+        else:
+            st.info("No analyses yet. Enter some text and click 'Analyze Sentiment' to get started!")
+   
+    # Statistics section
+    if len(st.session_state.results_history) >= 2:
+        st.header("📈 Statistics & Insights")
+       
+        # Collect all results for statistics
+        all_results = []
+        for entry in st.session_state.results_history:
+            for method, result in entry['results'].items():
+                all_results.append({
+                    'Method': method,
+                    'Sentiment': result['sentiment'],
+                    'Confidence': result['confidence'],
+                    'Timestamp': entry['timestamp']
+                })
+       
+        if all_results:
+            df_stats = pd.DataFrame(all_results)
+           
+            col1, col2 = st.columns(2)
+           
+            with col1:
+                # Sentiment distribution
+                sentiment_counts = df_stats['Sentiment'].value_counts()
+                fig_pie = px.pie(values=sentiment_counts.values,
+                               names=sentiment_counts.index,
+                               title='Overall Sentiment Distribution',
+                               color_discrete_map={
+                                   'Positive': '#2E8B57',
+                                   'Negative': '#DC143C',
+                                   'Neutral': '#4682B4'
+                               })
+                st.plotly_chart(fig_pie, use_container_width=True)
+           
+            with col2:
+                # Method comparison
+                method_stats = df_stats.groupby('Method').agg({
+                    'Confidence': 'mean',
+                    'Sentiment': 'count'
+                }).round(3)
+                method_stats.columns = ['Avg Confidence', 'Total Analyses']
+                st.write("**Method Performance:**")
+                st.dataframe(method_stats, use_container_width=True)
+           
+            # Agreement analysis
+            if len(df_stats['Method'].unique()) > 1:
+                st.subheader("Method Agreement Analysis")
+               
+                # Calculate agreement between methods
+                agreements = []
+                methods = df_stats['Method'].unique()
+               
+                for entry in st.session_state.results_history:
+                    if len(entry['results']) > 1:
+                        sentiments = [result['sentiment'] for result in entry['results'].values()]
+                        if len(set(sentiments)) == 1:  # All methods agree
+                            agreements.append("Full Agreement")
+                        elif len(set(sentiments)) == len(sentiments):  # All methods disagree
+                            agreements.append("No Agreement")
+                        else:
+                            agreements.append("Partial Agreement")
+               
+                if agreements:
+                    agreement_counts = pd.Series(agreements).value_counts()
+                    fig_agreement = px.bar(x=agreement_counts.index, y=agreement_counts.values,
+                                         title='Method Agreement Levels')
+                    st.plotly_chart(fig_agreement, use_container_width=True)
+   
+    # Instructions and tips
+    with st.expander("ℹ️ How to Use & Tips"):
+        st.markdown("""
+        ### How to Use:
+        1. **Select analysis methods** in the sidebar
+        2. **Enter text** in the text area or use quick examples
+        3. **Add manual assessment** if you want to compare against your judgment
+        4. **Click 'Analyze Sentiment'** to see results
+        5. **View comparisons** and detailed breakdowns
+       
+        ### About the Methods:
+        - **Simple Rule-Based**: Counts positive/negative words in the text
+        - **Pattern-Based**: Uses regex patterns and emoticons for analysis  
+        - **Hugging Face (Demo)**: Simulates API-based analysis (needs real API key for production)
+        - **Manual Assessment**: Your own judgment for accuracy comparison
+       
+        ### Tips for Better Results:
+        - Try texts with clear emotional language
+        - Test with different types of content (reviews, social media, etc.)
+        - Compare results across different methods
+        - Use manual assessment to evaluate accuracy
+        - Check the statistics to see method performance over time
+        """)
+ 
+if __name__ == "__main__":
+    main()
+                      
