@@ -111,3 +111,75 @@ def get_pattern_sentiment(text):
         }
     except Exception as e:
         return {'sentiment': 'Error', 'confidence': 0, 'raw_score': 0, 'details': str(e)}
+    
+    def get_huggingface_sentiment(text):
+    """Get sentiment using Hugging Face API (demo)"""
+    try:
+        # This is a simplified demo - in practice you'd need proper authentication
+        API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment-latest"
+       
+        # Mock response for demo (replace with actual API call when you have auth)
+        # Uncomment below for real API call:
+        # headers = {"Authorization": f"Bearer {your_hf_token}"}
+        # response = requests.post(API_URL, headers=headers, json={"inputs": text}, timeout=10)
+       
+        # For now, return a mock analysis based on simple heuristics
+        text_lower = text.lower()
+        if any(word in text_lower for word in ['good', 'great', 'love', 'excellent', 'amazing']):
+            return {
+                'sentiment': 'Positive',
+                'confidence': 0.85,
+                'raw_score': 0.85,
+                'details': 'Demo mode - detected positive keywords'
+            }
+        elif any(word in text_lower for word in ['bad', 'hate', 'terrible', 'awful', 'horrible']):
+            return {
+                'sentiment': 'Negative',
+                'confidence': 0.82,
+                'raw_score': -0.82,
+                'details': 'Demo mode - detected negative keywords'
+            }
+        else:
+            return {
+                'sentiment': 'Neutral',
+                'confidence': 0.65,
+                'raw_score': 0.0,
+                'details': 'Demo mode - neutral content'
+            }
+           
+    except Exception as e:
+        return {'sentiment': 'API Error', 'confidence': 0, 'raw_score': 0, 'details': str(e)}
+ 
+def create_comparison_chart(results):
+    """Create a comparison chart of sentiment results"""
+    methods = list(results.keys())
+    sentiments = [results[method]['sentiment'] for method in methods]
+    confidences = [results[method]['confidence'] for method in methods]
+   
+    # Create color map
+    color_map = {
+        'Positive': '#2E8B57',
+        'Negative': '#DC143C',
+        'Neutral': '#4682B4',
+        'Error': '#808080',
+        'API Error': '#FFA500'
+    }
+    colors = [color_map.get(s, '#808080') for s in sentiments]
+   
+    fig = go.Figure(data=[
+        go.Bar(x=methods, y=confidences,
+               marker_color=colors,
+               text=sentiments,
+               textposition='auto',
+               hovertemplate='<b>%{x}</b><br>Sentiment: %{text}<br>Confidence: %{y:.3f}<extra></extra>')
+    ])
+   
+    fig.update_layout(
+        title='Sentiment Analysis Comparison',
+        xaxis_title='Analysis Method',
+        yaxis_title='Confidence Score',
+        yaxis=dict(range=[0, 1]),
+        height=400
+    )
+   
+    return fig
