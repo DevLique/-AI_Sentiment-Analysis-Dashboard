@@ -19,7 +19,7 @@ streamlit run app.py or python3 -m streamlit run app.py
 
 ## Deployment
 
-This app is deployed on Streamlit Cloud: https://mysentimentdashboard.streamlit.app/
+This app is deployed on Streamlit Cloud: https://devlique--ai-sentiment-analysis-dashboard-app-uetlks.streamlit.app/
 
 ## Methods
 
