@@ -116,42 +116,7 @@ def get_pattern_sentiment(text):
     except Exception as e:
         return {'sentiment': 'Error', 'confidence': 0, 'raw_score': 0, 'details': str(e)}
 
-def get_huggingface_sentiment(text):
-    try:
-        # This is a simplified demo - in practice you'd need proper authentication
-        API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment-latest"
-        
-        # Mock response for demo (replace with actual API call when you have auth)
-        # Uncomment below for real API call:
-        # headers = {"Authorization": f"Bearer {your_hf_token}"}
-        # response = requests.post(API_URL, headers=headers, json={"inputs": text}, timeout=10)
-        
-        # For now, return a mock analysis based on simple heuristics
-        text_lower = text.lower()
-        if any(word in text_lower for word in ['good', 'great', 'love', 'excellent', 'amazing']):
-            return {
-                'sentiment': 'Positive',
-                'confidence': 0.85,
-                'raw_score': 0.85,
-                'details': 'Demo mode - detected positive keywords'
-            }
-        elif any(word in text_lower for word in ['bad', 'hate', 'terrible', 'awful', 'horrible']):
-            return {
-                'sentiment': 'Negative', 
-                'confidence': 0.82,
-                'raw_score': -0.82,
-                'details': 'Demo mode - detected negative keywords'
-            }
-        else:
-            return {
-                'sentiment': 'Neutral',
-                'confidence': 0.65,
-                'raw_score': 0.0,
-                'details': 'Demo mode - neutral content'
-            }
-            
-    except Exception as e:
-        return {'sentiment': 'API Error', 'confidence': 0, 'raw_score': 0, 'details': str(e)}
+
 
 def create_comparison_chart(results):
     """Create a comparison chart of sentiment results"""
@@ -196,7 +161,6 @@ def main():
     
     use_simple = st.sidebar.checkbox("Simple Rule-Based", value=True, help="Uses positive/negative word lists")
     use_pattern = st.sidebar.checkbox("Pattern-Based", value=True, help="Uses regex patterns and emoticons")
-    use_huggingface = st.sidebar.checkbox("Hugging Face (Demo)", value=False, help="Demo version - requires API key for production")
     use_manual = st.sidebar.checkbox("Manual Assessment", value=False, help="Add your own sentiment rating")
     
     st.sidebar.markdown("---")
@@ -265,9 +229,6 @@ def main():
                 
                 if use_pattern:
                     results['Pattern-Based'] = get_pattern_sentiment(user_text)
-                
-                if use_huggingface:
-                    results['Hugging Face (Demo)'] = get_huggingface_sentiment(user_text)
                 
                 if use_manual and manual_sentiment:
                     results['Manual Assessment'] = {
@@ -445,7 +406,6 @@ def main():
         ### About the Methods:
         - **Simple Rule-Based**: Counts positive/negative words in the text
         - **Pattern-Based**: Uses regex patterns and emoticons for analysis  
-        - **Hugging Face (Demo)**: Simulates API-based analysis (needs real API key for production)
         - **Manual Assessment**: Your own judgment for accuracy comparison
         
         ### Tips for Better Results:
