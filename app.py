@@ -19,6 +19,10 @@ st.set_page_config(
 if 'results_history' not in st.session_state:
     st.session_state.results_history = []
 
+# Initialize text state
+if 'example_text' not in st.session_state:
+    st.session_state.example_text = ""
+
 # Simple rule-based sentiment analysis
 def get_simple_sentiment(text):
     """Simple rule-based sentiment analysis"""
@@ -204,29 +208,32 @@ def main():
     with col1:
         st.header("📝 Text Analysis")
         
-        # Text input
-        user_text = st.text_area(
-            "Enter text to analyze:", 
-            placeholder="Type or paste your text here...\n\nTry examples like:\n• 'I love this product! It's amazing!'\n• 'This is terrible and I hate it.'\n• 'The weather is okay today.'", 
-            height=150
-        )
-        
-        # Sample texts for testing
+        # Sample texts for testing - MOVED BEFORE TEXT INPUT
         st.markdown("**Quick Test Examples (click to load):**")
         col_a, col_b, col_c = st.columns(3)
         
         with col_a:
             if st.button("😊 Positive Example"):
-                user_text = "I absolutely love this product! It's fantastic and works perfectly. Highly recommended!"
-                st.success("Positive example loaded!")
+                st.session_state.example_text = "I absolutely love this product! It's fantastic and works perfectly. Highly recommended!"
         with col_b:
             if st.button("😞 Negative Example"):
-                user_text = "This is terrible! I hate it so much. Worst purchase ever. Complete waste of money."
-                st.error("Negative example loaded!")
+                st.session_state.example_text = "This is terrible! I hate it so much. Worst purchase ever. Complete waste of money."
         with col_c:
             if st.button("😐 Neutral Example"):
-                user_text = "The product arrived on time. It has basic features and standard quality. Nothing special."
-                st.info("Neutral example loaded!")
+                st.session_state.example_text = "The product arrived on time. It has basic features and standard quality. Nothing special."
+        
+        # Text input - USES SESSION STATE FOR VALUE
+        user_text = st.text_area(
+            "Enter text to analyze:", 
+            value=st.session_state.example_text,
+            placeholder="Type or paste your text here...\n\nOr click one of the example buttons above to load sample text.", 
+            height=150,
+            key="text_input"
+        )
+        
+        # Update session state when text changes
+        if user_text != st.session_state.example_text:
+            st.session_state.example_text = user_text
         
         # Show current text length
         if user_text.strip():
@@ -430,7 +437,7 @@ def main():
         st.markdown("""
         ### How to Use:
         1. **Select analysis methods** in the sidebar
-        2. **Enter text** in the text area or use quick examples
+        2. **Click example buttons** or **enter text** in the text area
         3. **Add manual assessment** if you want to compare against your judgment
         4. **Click 'Analyze Sentiment'** to see results
         5. **View comparisons** and detailed breakdowns
